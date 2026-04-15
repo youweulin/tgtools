@@ -119,22 +119,49 @@ ${knowledgeBase}
 ${modeInstruction}
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: userPromptContent,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.75,
-      },
-    });
+    // 建立備用模型自動降級機制 (解決 503 High Demand 錯誤)
+    const fallbackModels = [
+      "gemini-2.5-flash",   // 預設首選最新模型
+      "gemini-2.0-flash",   // 穩定備用
+      "gemini-1.5-flash",   // 最基礎備用
+      "gemini-2.5-pro"      // 進階降級可用
+    ];
 
-    if (response.text) {
-      return NextResponse.json({ result: response.text });
-    } else {
-      return NextResponse.json({ error: "無法生成內容" }, { status: 500 });
+    let lastError: any = null;
+
+    for (const modelName of fallbackModels) {
+      try {
+        console.log(\`正在嘗試使用模型: \${modelName}\`);
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: userPromptContent,
+          config: {
+            systemInstruction: systemInstruction,
+            temperature: 0.75,
+          },
+        });
+
+        if (response.text) {
+          // 成功時即刻回傳，並附上所使用的模型名稱供除錯參考
+          return NextResponse.json({ 
+            result: response.text, 
+            usedModel: modelName 
+          });
+        }
+      } catch (error: any) {
+        console.warn(\`模型 \${modelName} 失敗: \${error?.message || JSON.stringify(error)}\`);
+        lastError = error;
+        // 如果遇到錯誤 (例如 503)，則進入下一次迴圈嘗試下一個模型
+      }
     }
+
+    // 當所有模型都失敗時，才真正吐出錯誤給前端
+    return NextResponse.json({ 
+      error: lastError?.message ? \`AI 伺服器滿載 (\${lastError.message})\` : "目前所有備用模型皆忙線中，請稍後再試。" 
+    }, { status: 500 });
+    
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    return NextResponse.json({ error: error?.message || "內部伺服器錯誤" }, { status: 500 });
+    console.error("System Error:", error);
+    return NextResponse.json({ error: error?.message || "內部伺服器設定錯誤" }, { status: 500 });
   }
 }
