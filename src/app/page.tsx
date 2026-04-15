@@ -246,7 +246,7 @@ export default function Home() {
                  <div 
                    key={style.id} 
                    onClick={() => setFormData({...formData, toneStyle: style.id})}
-                   className={\`p-3 border-2 rounded-xl cursor-pointer transition select-none flex flex-col items-center text-center \${formData.toneStyle === style.id ? 'border-purple-600 bg-purple-50' : 'border-slate-100 hover:border-slate-300'}\`}
+                   className={`p-3 border-2 rounded-xl cursor-pointer transition select-none flex flex-col items-center text-center ${formData.toneStyle === style.id ? 'border-purple-600 bg-purple-50' : 'border-slate-100 hover:border-slate-300'}`}
                  >
                     <div className="text-2xl mb-1">{style.icon}</div>
                     <div className="font-bold text-sm text-slate-800">{style.id}</div>
