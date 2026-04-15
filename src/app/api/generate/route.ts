@@ -121,10 +121,10 @@ ${modeInstruction}
 
     // 建立備用模型自動降級機制 (解決 503 High Demand 錯誤)
     const fallbackModels = [
-      "gemini-2.5-flash",   // 預設首選最新模型
-      "gemini-2.0-flash",   // 穩定備用
-      "gemini-1.5-flash",   // 最基礎備用
-      "gemini-2.5-pro"      // 進階降級可用
+      "gemini-2.5-flash",              // 預設首選 (10K RPD, 遇到 503 時切換)
+      "gemini-2.5-flash-lite",         // 無敵備用 (Unlimited RPD, 穩定版，保證過關)
+      "gemini-3.1-flash-lite-preview", // 超高配額備用 (150K RPD, 預覽版)
+      "gemini-3-flash-preview"         // 最終防線 (10K RPD, 預覽版)
     ];
 
     let lastError: any = null;
