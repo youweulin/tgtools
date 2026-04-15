@@ -159,7 +159,7 @@ ${baseStrategy}
 
     for (const modelName of fallbackModels) {
       try {
-        console.log(\`正在嘗試使用模型: \${modelName}\`);
+        console.log(`正在嘗試使用模型: ${modelName}`);
         const response = await ai.models.generateContent({
           model: modelName,
           contents: userPromptContent,
@@ -176,13 +176,13 @@ ${baseStrategy}
           });
         }
       } catch (error: any) {
-        console.warn(\`模型 \${modelName} 失敗: \${error?.message || JSON.stringify(error)}\`);
+        console.warn(`模型 ${modelName} 失敗: ${error?.message || JSON.stringify(error)}`);
         lastError = error;
       }
     }
 
     return NextResponse.json({ 
-      error: lastError?.message ? \`AI 伺服器滿載 (\${lastError.message})\` : "目前所有備用模型皆忙線中，請稍後再試。" 
+      error: lastError?.message ? `AI 伺服器滿載 (${lastError.message})` : "目前所有備用模型皆忙線中，請稍後再試。" 
     }, { status: 500 });
     
   } catch (error: any) {
