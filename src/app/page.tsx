@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { Settings, Sparkles, Save, History, ChevronRight, X, UserSearch, MapPin, Clock, HeartPulse, Bus, ShoppingBag, Mic2, Calendar, BookOpen, Flame } from 'lucide-react';
 
 const TONE_STYLES = [
+  { id: '傳奇小羊哥', icon: '🐑', desc: '草根反轉、超群銷售心理學' },
   { id: '熱情激昂', icon: '🔥', desc: '節奏快、具煽動力、像叫賣哥' },
   { id: '溫暖關懷', icon: '🫂', desc: '像鄰家大姊/大哥的噓寒問暖' },
   { id: '幽默風趣', icon: '🤣', desc: '愛開玩笑、自嘲、逗樂長輩' },
