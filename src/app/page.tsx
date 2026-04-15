@@ -47,6 +47,9 @@ export default function Home() {
   const [result, setResult] = useState('');
   const [usedModel, setUsedModel] = useState('');
   const [history, setHistory] = useState([]);
+  const [chatMessages, setChatMessages] = useState<{role: string, content: string}[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
   const [currentDate, setCurrentDate] = useState('');
 
   useEffect(() => {
@@ -77,6 +80,8 @@ export default function Home() {
 
     setLoading(true);
     setResult('');
+    setChatMessages([]); // 清除上一個主題的對談紀錄
+    setChatInput('');
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -100,6 +105,41 @@ export default function Home() {
       alert("網路連線錯誤，請重試");
     }
     setLoading(false);
+  };
+
+  const handleChatSubmit = async () => {
+    if (!chatInput.trim() || !apiKey) return;
+    
+    const newUserMsg = { role: 'user', content: chatInput };
+    const currentHist = [...chatMessages];
+    setChatMessages([...currentHist, newUserMsg]);
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey,
+          contextScript: result,
+          toneStyle: formData.toneStyle,
+          history: currentHist,
+          userMessage: newUserMsg.content
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setChatMessages([...currentHist, newUserMsg, { role: 'model', content: data.result }]);
+      } else {
+        alert("錯誤: " + data.error);
+        setChatMessages(currentHist); // 還原
+      }
+    } catch(err) {
+      alert("連線錯誤，請重試");
+      setChatMessages(currentHist);
+    }
+    setIsChatLoading(false);
   };
 
   const saveToHistory = () => {
@@ -320,6 +360,46 @@ export default function Home() {
               </div>
               <div className={`p-5 prose prose-slate max-w-none text-slate-700 leading-relaxed text-[15px] ${appMode === 'sales' ? 'prose-h3:text-red-700 prose-strong:text-red-700' : 'prose-h3:text-teal-700 prose-strong:text-teal-700'} prose-h3:border-b prose-h3:pb-2 prose-h3:mt-6`}>
                 <ReactMarkdown>{result}</ReactMarkdown>
+              </div>
+
+              {/* Drill-down Chat UI */}
+              <div className="bg-slate-50 border-t border-slate-200 p-5 space-y-4">
+                 <h4 className="font-bold text-slate-700 flex items-center gap-2 mb-4">
+                    💬 挖掘百寶箱 / 要求示範說書
+                 </h4>
+                 
+                 {chatMessages.map((msg, idx) => (
+                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                       <div className={`max-w-[85%] rounded-2xl p-4 ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-none shadow-sm'}`}>
+                          {msg.role === 'user' ? (
+                             <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
+                          ) : (
+                             <div className="prose prose-sm prose-slate max-w-none">
+                                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                             </div>
+                          )}
+                       </div>
+                    </div>
+                 ))}
+
+                 <div className="flex gap-2 mt-2">
+                    <input 
+                      type="text" 
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => { if(e.key === 'Enter') handleChatSubmit(); }}
+                      disabled={isChatLoading}
+                      placeholder="例：給我一個阿松表現賢內助的具體場景..."
+                      className="flex-1 p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm disabled:bg-slate-100"
+                    />
+                    <button 
+                      onClick={handleChatSubmit}
+                      disabled={isChatLoading || !chatInput.trim()}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isChatLoading ? '生成中..' : '追問'}
+                    </button>
+                 </div>
               </div>
             </section>
           )}
