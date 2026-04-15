@@ -33,6 +33,7 @@ export default function Home() {
   
   const [formData, setFormData] = useState({
     locations: '金澤近江町市場、兼六園、東茶屋街、長町武家屋敷',
+    customKeywords: 'NHK大河劇、利家與松',
     daysToShop: '明天進店',
     driveTime: '1.5小時',
     guestState: '心情不錯，但覺得天氣有點涼',
@@ -105,6 +106,7 @@ export default function Home() {
       id: Date.now(),
       date: currentDate,
       locations: formData.locations,
+      keywords: formData.customKeywords,
       content: result,
       mode: appMode
     };
@@ -174,6 +176,17 @@ export default function Home() {
                 onChange={e => setFormData({...formData, locations: e.target.value})}
                 className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 h-20 bg-slate-50"
                 placeholder="例如：京都清水寺、伏見稻荷..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-600 mb-1 text-purple-600 flex items-center gap-1">✨ 導遊指定連貫關鍵字 (讓 AI 為您找故事串聯)</label>
+              <input 
+                type="text"
+                value={formData.customKeywords}
+                onChange={e => setFormData({...formData, customKeywords: e.target.value})}
+                className="w-full p-3 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-slate-700 bg-purple-50 placeholder-purple-300"
+                placeholder="例如：NHK大河劇、利家與松、當地連續劇..."
               />
             </div>
 
@@ -331,6 +344,7 @@ export default function Home() {
                           {item.date} {item.mode === 'pure_topic' ? <span className="bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded text-[10px]">純話題</span> : <span className="bg-red-100 text-red-800 px-1.5 py-0.5 rounded text-[10px]">銷售</span>}
                        </span>
                        <h3 className="font-bold text-slate-800 text-lg mt-1">{item.locations}</h3>
+                       {item.keywords && <div className="text-xs text-purple-600 font-bold mt-1">🔑 {item.keywords}</div>}
                      </div>
                      <button onClick={() => handleDeleteHistory(item.id)} className="text-red-400 px-2 py-1 hover:bg-red-50 rounded text-sm">刪除</button>
                    </div>

@@ -4,7 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { apiKey, mode, locations, daysToShop, driveTime, guestState, ageGroup, product, toneStyle, currentDate } = body;
+    const { apiKey, mode, locations, customKeywords, daysToShop, driveTime, guestState, ageGroup, product, toneStyle, currentDate } = body;
 
     if (!apiKey) {
       return NextResponse.json({ error: "請在設定中輸入您的 Gemini API Key" }, { status: 401 });
@@ -106,10 +106,14 @@ STEP 7 收網互惠：結尾送個無形的人情或請吃東西的預告（「�
       userPromptContent = `請根據以下今日行程與條件，生成導遊的「純文化話題」話術：
 - 📅 今天的日期：${currentDate}
 - 📍 今日將前往的景點：${locations}
+${customKeywords ? `- 🔑 導遊指定發揮關鍵字 / 故事點：${customKeywords}` : ''}
 - 🚌 本段車程時間：${driveTime}
 - 👥 車上的主要客群：${ageGroup}
 - 😁 客人當下狀態：${guestState}
 - 🎭 話術風格：${toneStyle}
+
+【🔑 關鍵貫穿任務】
+如果上方有提供「導遊指定發揮關鍵字」（例如特定連續劇、名詞、人物），你必須發揮專業導遊的知識底蘊，將這個關鍵字的背景故事融入講稿，並當作『橋樑』來貫穿今天的每一個景點！
 
 立刻開始你的頂級說書人表演！`;
 
@@ -135,12 +139,16 @@ ${baseStrategy}
       userPromptContent = `請根據以下今日行程與條件，生成導遊戰略與話術：
 - 📅 今天的日期：${currentDate}
 - 📍 今日將前往的景點：${locations}
+${customKeywords ? `- 🔑 導遊指定發揮關鍵字 / 故事點：${customKeywords}` : ''}
 - 🚌 本段車程時間：${driveTime}
 - 😁 客人當下狀態：${guestState}
 - 👥 車上的主要客群：${ageGroup}
 - ⏳ 距離免稅店天數：${daysToShop} 天
 - 💊 準備推銷的光伸商品：${product}
 - 🎭 話術風格：${toneStyle}
+
+【🔑 關鍵貫穿任務】
+如果上方有提供「導遊指定發揮關鍵字」（例如特定連續劇、名詞、人物），你必須發揮講古功力，將這個關鍵字的故事自然揉合進景點介紹中，並把它轉化成後續切入痛點或介紹產品的絕佳鋪墊！
 
 立刻開始你的表演！`;
     }
