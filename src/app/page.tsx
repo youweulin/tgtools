@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Settings, Sparkles, Save, History, ChevronRight, X, UserSearch, MapPin, Clock, HeartPulse, Bus, ShoppingBag, Mic2, Calendar } from 'lucide-react';
+import { Settings, Sparkles, Save, History, ChevronRight, X, UserSearch, MapPin, Clock, HeartPulse, Bus, ShoppingBag, Mic2, Calendar, BookOpen, Flame } from 'lucide-react';
 
 const TONE_STYLES = [
   { id: '熱情激昂', icon: '🔥', desc: '節奏快、具煽動力、像叫賣哥' },
@@ -28,12 +28,13 @@ export default function Home() {
   const [apiKey, setApiKey] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [appMode, setAppMode] = useState('sales'); // 'sales' or 'pure_topic'
   
   const [formData, setFormData] = useState({
-    locations: '金澤兼六園、東茶屋街',
-    daysToShop: '明天',
+    locations: '金澤近江町市場、兼六園、東茶屋街、長町武家屋敷',
+    daysToShop: '明天進店',
     driveTime: '1.5小時',
-    guestState: '剛走完兼六園，長輩膝蓋開始痠',
+    guestState: '心情不錯，但覺得天氣有點涼',
     ageGroup: '長青族 60+',
     product: PRESET_PRODUCTS[0],
     customProduct: '',
@@ -66,8 +67,8 @@ export default function Home() {
       return;
     }
     
-    const finalProduct = formData.product === '自訂...' ? formData.customProduct : formData.product;
-    if (!finalProduct) {
+    let finalProduct = formData.product === '自訂...' ? formData.customProduct : formData.product;
+    if (appMode === 'sales' && !finalProduct) {
       alert("請輸入自訂商品！"); return;
     }
 
@@ -79,6 +80,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           apiKey,
+          mode: appMode,
           ...formData,
           product: finalProduct,
           currentDate: new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric'})
@@ -102,7 +104,8 @@ export default function Home() {
       id: Date.now(),
       date: currentDate,
       locations: formData.locations,
-      content: result
+      content: result,
+      mode: appMode
     };
     const newHistory = [newEntry, ...history];
     setHistory(newHistory as any);
@@ -136,57 +139,77 @@ export default function Home() {
       {!showHistory && (
         <main className="p-4 max-w-2xl mx-auto space-y-6 mt-2">
           
-          <div className="text-right text-xs font-bold text-slate-400 flex items-center justify-end gap-1">
-             <Calendar className="w-3 h-3" /> 系統日期: {currentDate} (AI將自動抓取對應節慶)
+          {/* Mode Switcher */}
+          <div className="flex bg-slate-200 p-1 rounded-2xl shadow-inner">
+            <button 
+              onClick={() => setAppMode('sales')}
+              className={`flex-1 py-3 px-2 rounded-xl text-sm font-bold flex flex-col items-center gap-1 transition-all ${appMode === 'sales' ? 'bg-white shadow text-red-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <Flame className="w-5 h-5" />
+              免稅店火力銷售 (6層DNA)
+            </button>
+            <button 
+              onClick={() => setAppMode('pure_topic')}
+              className={`flex-1 py-3 px-2 rounded-xl text-sm font-bold flex flex-col items-center gap-1 transition-all ${appMode === 'pure_topic' ? 'bg-white shadow text-teal-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <BookOpen className="w-5 h-5" />
+              無推銷文化講古 (純故事)
+            </button>
           </div>
 
-          <section className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+          <div className="text-right text-xs font-bold text-slate-400 flex items-center justify-end gap-1">
+             <Calendar className="w-3 h-3" /> 系統日期: {currentDate} (自動帶入節慶)
+          </div>
+
+          <section className={`bg-white p-5 rounded-2xl shadow-sm border space-y-4 ${appMode === 'sales' ? 'border-red-100' : 'border-teal-100'}`}>
             <h2 className="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2">
-               <MapPin className="w-5 h-5 text-blue-600" /> 第一層：行程與現狀分析
+               <MapPin className={`w-5 h-5 ${appMode === 'sales' ? 'text-blue-600' : 'text-teal-600'}`} /> 第一層：行程與現狀分析
             </h2>
             
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-1">今日景點 (AI主入口)</label>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">今日景點 (可填多個自動串聯)</label>
               <textarea 
                 value={formData.locations}
                 onChange={e => setFormData({...formData, locations: e.target.value})}
-                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 h-20"
+                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 h-20 bg-slate-50"
                 placeholder="例如：京都清水寺、伏見稻荷..."
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1 flex items-center gap-1"><ShoppingBag className="w-4 h-4"/> 距進站天數</label>
-                <select 
-                  value={formData.daysToShop}
-                  onChange={e => setFormData({...formData, daysToShop: e.target.value})}
-                  className="w-full p-3 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 outline-none text-slate-700">
-                  <option value="今天下午進店">今天下午進店</option>
-                  <option value="明天進店">明天進店 (強力鋪墊)</option>
-                  <option value="還有2天">還有 2 天才進店</option>
-                  <option value="還有3天以上">還有 3 天以上 (輕度觀念)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1 flex items-center gap-1"><Clock className="w-4 h-4"/> 本段車程</label>
+              {appMode === 'sales' && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1 flex items-center gap-1"><ShoppingBag className="w-4 h-4"/> 距進站天數</label>
+                  <select 
+                    value={formData.daysToShop}
+                    onChange={e => setFormData({...formData, daysToShop: e.target.value})}
+                    className="w-full p-3 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-red-400 outline-none text-slate-700">
+                    <option value="今天下午進店">今天下午進店</option>
+                    <option value="明天進店">明天進店 (強力鋪墊)</option>
+                    <option value="還有2天">還有 2 天才進店</option>
+                    <option value="還有3天以上">還有 3 天以上 (輕度觀念)</option>
+                  </select>
+                </div>
+              )}
+              <div className={appMode === 'pure_topic' ? 'col-span-2' : ''}>
+                <label className="block text-sm font-semibold text-slate-600 mb-1 flex items-center gap-1"><Clock className="w-4 h-4"/> 預估車程</label>
                 <input 
                   type="text"
                   value={formData.driveTime}
                   onChange={e => setFormData({...formData, driveTime: e.target.value})}
-                  className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-700"
+                  className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-slate-50"
                   placeholder="例：1.5小時"
                 />
               </div>
             </div>
 
             <div>
-               <label className="block text-sm font-semibold text-slate-600 mb-1 flex items-center gap-1"><Bus className="w-4 h-4"/> 旅客當下狀態 (決定痛點切入)</label>
+               <label className="block text-sm font-semibold text-slate-600 mb-1 flex items-center gap-1"><Bus className="w-4 h-4"/> 旅客當下狀態 (決定破冰方式)</label>
                 <input 
                   type="text"
                   value={formData.guestState}
                   onChange={e => setFormData({...formData, guestState: e.target.value})}
-                  className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-700"
+                  className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-slate-50"
                   placeholder="例：剛走完山路腳痠、又冷又餓想睡覺..."
                 />
             </div>
@@ -194,10 +217,10 @@ export default function Home() {
             <hr className="border-slate-100 my-4" />
 
             <h2 className="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2">
-               <HeartPulse className="w-5 h-5 text-indigo-600" /> 第二層：銷售與客群對接
+               {appMode === 'sales' ? <HeartPulse className="w-5 h-5 text-red-600" /> : <UserSearch className="w-5 h-5 text-teal-600" />} 第二層：目標與客群
             </h2>
 
-             <div className="grid grid-cols-2 gap-4">
+             <div className={`grid ${appMode === 'sales' ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
                 <div>
                   <label className="block text-sm font-semibold text-slate-600 mb-1">主要客群</label>
                   <select 
@@ -212,24 +235,26 @@ export default function Home() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1">光伸主推商品</label>
-                  <select 
-                    value={formData.product}
-                    onChange={e => setFormData({...formData, product: e.target.value})}
-                    className="w-full p-3 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 outline-none font-bold text-indigo-700">
-                    {PRESET_PRODUCTS.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
+                {appMode === 'sales' && (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-600 mb-1 text-red-600">光伸主推商品</label>
+                    <select 
+                      value={formData.product}
+                      onChange={e => setFormData({...formData, product: e.target.value})}
+                      className="w-full p-3 border border-red-200 rounded-xl bg-red-50 focus:ring-2 focus:ring-red-500 outline-none font-bold text-red-800">
+                      {PRESET_PRODUCTS.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                )}
               </div>
 
-              {formData.product === '自訂...' && (
+              {appMode === 'sales' && formData.product === '自訂...' && (
                 <div>
                   <input 
                     type="text"
                     value={formData.customProduct}
                     onChange={e => setFormData({...formData, customProduct: e.target.value})}
-                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 mt-2"
+                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none text-slate-700 mt-2"
                     placeholder="請輸入其他商品名稱..."
                   />
                 </div>
@@ -246,7 +271,7 @@ export default function Home() {
                  <div 
                    key={style.id} 
                    onClick={() => setFormData({...formData, toneStyle: style.id})}
-                   className={`p-3 border-2 rounded-xl cursor-pointer transition select-none flex flex-col items-center text-center ${formData.toneStyle === style.id ? 'border-purple-600 bg-purple-50' : 'border-slate-100 hover:border-slate-300'}`}
+                   className={`p-3 border-2 rounded-xl cursor-pointer transition select-none flex flex-col items-center text-center ${formData.toneStyle === style.id ? 'border-purple-600 bg-purple-50 shadow-md transform scale-105' : 'border-slate-100 hover:border-slate-300'}`}
                  >
                     <div className="text-2xl mb-1">{style.icon}</div>
                     <div className="font-bold text-sm text-slate-800">{style.id}</div>
@@ -258,24 +283,24 @@ export default function Home() {
             <button 
               onClick={handleGenerate}
               disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold rounded-xl mt-6 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition disabled:opacity-70 disabled:cursor-wait text-lg"
+              className={`w-full py-4 text-white font-bold rounded-xl mt-6 flex items-center justify-center gap-2 shadow-lg transition disabled:opacity-70 disabled:cursor-wait text-lg ${appMode === 'sales' ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-red-600/30' : 'bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 shadow-teal-600/30'}`}
             >
-              {loading ? <span className="animate-pulse">王牌大腦高速運算中...</span> : <><Sparkles className="w-5 h-5"/> 生成 6層 DNA 話術</>}
+              {loading ? <span className="animate-pulse">王牌大腦高速運算中...</span> : <><Sparkles className="w-5 h-5"/> {appMode === 'sales' ? '生成 6 層 DNA 銷售話術' : '生成純文化講古故事'}</>}
             </button>
           </section>
 
           {/* Results Section */}
           {result && (
             <section id="result-anchor" className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mt-6 animate-in fade-in slide-in-from-bottom-4">
-              <div className="bg-indigo-50 px-5 py-4 border-b border-indigo-100 flex justify-between items-center sticky top-0">
-                <h3 className="font-bold text-indigo-900 flex items-center gap-2">
-                   🎯 今日專屬 6 層話術稿
+              <div className={`${appMode === 'sales' ? 'bg-red-50 border-red-100' : 'bg-teal-50 border-teal-100'} px-5 py-4 border-b flex justify-between items-center sticky top-0`}>
+                <h3 className={`font-bold flex items-center gap-2 ${appMode === 'sales' ? 'text-red-900' : 'text-teal-900'}`}>
+                   🎯 今日專屬手稿
                 </h3>
-                <button onClick={saveToHistory} className="text-sm font-bold bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition flex items-center gap-1">
+                <button onClick={saveToHistory} className={`text-sm font-bold text-white px-4 py-2 rounded-lg transition flex items-center gap-1 ${appMode === 'sales' ? 'bg-red-600 hover:bg-red-700' : 'bg-teal-600 hover:bg-teal-700'}`}>
                   <Save className="w-4 h-4"/> 收藏
                 </button>
               </div>
-              <div className="p-5 prose prose-slate prose-h3:text-blue-700 prose-h3:border-b prose-h3:pb-2 prose-h3:mt-6 prose-strong:text-indigo-700 max-w-none text-slate-700 leading-relaxed text-[15px]">
+              <div className={`p-5 prose prose-slate max-w-none text-slate-700 leading-relaxed text-[15px] ${appMode === 'sales' ? 'prose-h3:text-red-700 prose-strong:text-red-700' : 'prose-h3:text-teal-700 prose-strong:text-teal-700'} prose-h3:border-b prose-h3:pb-2 prose-h3:mt-6`}>
                 <ReactMarkdown>{result}</ReactMarkdown>
               </div>
             </section>
@@ -301,7 +326,9 @@ export default function Home() {
                  <div key={item.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-4 ">
                    <div className="flex justify-between items-start mb-3">
                      <div>
-                       <span className="text-xs font-bold text-slate-400">{item.date}</span>
+                       <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                          {item.date} {item.mode === 'pure_topic' ? <span className="bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded text-[10px]">純話題</span> : <span className="bg-red-100 text-red-800 px-1.5 py-0.5 rounded text-[10px]">銷售</span>}
+                       </span>
                        <h3 className="font-bold text-slate-800 text-lg mt-1">{item.locations}</h3>
                      </div>
                      <button onClick={() => handleDeleteHistory(item.id)} className="text-red-400 px-2 py-1 hover:bg-red-50 rounded text-sm">刪除</button>
@@ -313,6 +340,7 @@ export default function Home() {
                    <button 
                      onClick={() => {
                         setResult(item.content);
+                        setAppMode(item.mode || 'sales');
                         setShowHistory(false);
                         setTimeout(() => document.getElementById('result-anchor')?.scrollIntoView({ behavior: 'smooth'}), 100);
                      }}
